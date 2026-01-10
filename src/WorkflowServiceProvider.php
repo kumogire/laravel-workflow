@@ -19,6 +19,9 @@ class WorkflowServiceProvider extends ServiceProvider
         $this->app->singleton(WorkflowService::class, function ($app) {
             return new WorkflowService();
         });
+
+         // Register facade alias
+        $this->app->alias(\Kumogire\Workflow\Services\WorkflowService::class, 'workflow');
     }
 
     public function boot()
