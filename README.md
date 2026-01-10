@@ -3,68 +3,326 @@
 A flexible, database-driven workflow system for Laravel applications.
 
 ## Installation
+
 ```bash
 composer require kumogire/laravel-workflow
 ```
 
-## Quick Start
+Run the installation command:
+
 ```bash
 php artisan workflow:install
 ```
 
+This will publish the configuration file and run the database migrations.
+
 ## Configuration
 
-Publish configuration:
+The configuration file is published to `config/workflow.php`. You can customize:
+
+- User model
+- Route prefixes and middleware
+- Action handlers
+- Queue settings
+- Cache settings
+
+To manually publish the configuration:
+
 ```bash
 php artisan vendor:publish --tag=workflow-config
 ```
 
-## Usage
+## Basic Usage
 
-### Creating a Workflow
+### Using the Workflow Facade
+
+The package automatically registers the `Workflow` facade for convenient access.
+
 ```php
-use Kumogire\Workflow\Models\Workflow;
+use Kumogire\Workflow\Facades\Workflow;
+use Kumogire\Workflow\Models\Workflow as WorkflowModel;
 
-$workflow = Workflow::create([
-    'name' => 'Employee Onboarding',
-    'type' => 'onboarding',
-    'is_active' => true,
+// Get a workflow
+$workflow = WorkflowModel::find(1);
+$user = auth()->user();
+
+// Start a workflow instance
+$instance = Workflow::startWorkflow($workflow, $user);
+
+// Complete the current step
+$instance = Workflow::completeStep($instance, $user, [
+    'answer' => 'yes',
+    'score' => 85,
 ]);
+
+// Get current step details
+$details = Workflow::getCurrentStepDetails($instance, $user);
+
+// Manage workflow state
+Workflow::pauseWorkflow($instance);
+Workflow::resumeWorkflow($instance);
+Workflow::abandonWorkflow($instance);
 ```
 
-### Starting a Workflow Instance
+### Using Dependency Injection
+
+You can also inject the service directly into your controllers or classes:
+
 ```php
 use Kumogire\Workflow\Services\WorkflowService;
 
-$service = app(WorkflowService::class);
-$instance = $service->startWorkflow($workflow, $user);
+class OnboardingController extends Controller
+{
+    public function __construct(
+        protected WorkflowService $workflowService
+    ) {}
+    
+    public function start(Workflow $workflow)
+    {
+        $instance = $this->workflowService->startWorkflow(
+            $workflow, 
+            auth()->user()
+        );
+        
+        return response()->json($instance);
+    }
+    
+    public function completeStep(WorkflowInstance $instance, Request $request)
+    {
+        $instance = $this->workflowService->completeStep(
+            $instance,
+            auth()->user(),
+            $request->validated()
+        );
+        
+        return response()->json($instance);
+    }
+}
 ```
+
+### Creating Workflows
+
+Create workflows programmatically or through your admin interface:
+
+```php
+use Kumogire\Workflow\Models\Workflow;
+use Kumogire\Workflow\Models\WorkflowStep;
+
+$workflow = Workflow::create([
+    'name' => 'Employee Onboarding',
+    'description' => 'Complete onboarding process for new employees',
+    'type' => 'onboarding',
+    'is_active' => true,
+]);
+
+// Add steps
+WorkflowStep::create([
+    'workflow_id' => $workflow->id,
+    'order' => 1,
+    'title' => 'Complete Profile',
+    'description' => 'Fill out your employee profile',
+    'type' => 'form',
+    'configuration' => [
+        'fields' => ['name', 'phone', 'address']
+    ],
+    'can_complete_roles' => ['employee'],
+]);
+
+WorkflowStep::create([
+    'workflow_id' => $workflow->id,
+    'order' => 2,
+    'title' => 'Manager Approval',
+    'description' => 'Wait for manager to approve your profile',
+    'type' => 'approval',
+    'can_complete_roles' => ['manager', 'admin'],
+]);
+```
+
+## Advanced Features
+
+### Conditional Steps
+
+Steps can be conditionally executed or skipped based on data:
+
+```php
+WorkflowStep::create([
+    'workflow_id' => $workflow->id,
+    'order' => 3,
+    'title' => 'Additional Training',
+    'condition_type' => 'if_data_equals',
+    'condition_config' => [
+        'field' => 'department',
+        'value' => 'engineering'
+    ],
+    'skip_if_condition_false' => true,
+]);
+```
+
+**Available condition types:**
+- `always` - Always execute (default)
+- `if_data_equals` - Check if field equals value
+- `if_data_contains` - Check if array field contains value
+- `if_role` - Check if user has specific role
+
+### Step Permissions
+
+Control who can view and complete each step:
+
+```php
+WorkflowStep::create([
+    'workflow_id' => $workflow->id,
+    'order' => 1,
+    'title' => 'HR Review',
+    'can_view_roles' => ['hr', 'admin'],
+    'can_complete_roles' => ['hr', 'admin'],
+]);
+```
+
+Empty role arrays mean any authenticated user can access the step.
+
+### Workflow Actions
+
+Actions trigger automatically when steps start or complete:
+
+```php
+use Kumogire\Workflow\Models\WorkflowAction;
+
+WorkflowAction::create([
+    'workflow_step_id' => $step->id,
+    'type' => 'email',
+    'trigger' => 'on_step_complete',
+    'configuration' => [
+        'to' => '{{user.email}}',
+        'template' => 'onboarding-welcome',
+        'subject' => 'Welcome aboard!',
+    ],
+]);
+```
+
+**Built-in action types:**
+- `email` - Send email notifications
+- `sms` - Send SMS messages
+- `webhook` - Call external webhooks
+- `data_save` - Save data to database
+
+**Trigger points:**
+- `on_step_start` - When step begins
+- `on_step_complete` - When step is completed
 
 ## Customization
 
 ### Custom Action Handlers
 
-Create a class implementing `ActionHandler`:
+Create custom action handlers for specific integrations:
+
 ```php
 namespace App\Workflow\Actions;
 
 use Kumogire\Workflow\Contracts\ActionHandler;
+use Kumogire\Workflow\Models\WorkflowAction;
+use Kumogire\Workflow\Models\WorkflowInstance;
 
 class SlackNotificationHandler implements ActionHandler
 {
-    public function handle($action, $instance): void
+    public function handle(WorkflowAction $action, WorkflowInstance $instance): void
     {
-        // Send Slack notification
+        $config = $action->configuration;
+        $channel = $config['channel'] ?? '#general';
+        $message = $config['message'] ?? 'Workflow notification';
+        
+        // Send to Slack
+        // \Slack::send($channel, $message);
     }
 }
 ```
 
-Register in `config/workflow.php`:
+Register your custom handler in `config/workflow.php`:
+
 ```php
 'action_handlers' => [
-    'slack' => \App\Workflow\Actions\SlackNotificationHandler::class,
+    'email' => \Kumogire\Workflow\Actions\Handlers\EmailActionHandler::class,
+    'sms' => \Kumogire\Workflow\Actions\Handlers\SmsActionHandler::class,
+    'webhook' => \Kumogire\Workflow\Actions\Handlers\WebhookActionHandler::class,
+    'data_save' => \Kumogire\Workflow\Actions\Handlers\DataSaveActionHandler::class,
+    'slack' => \App\Workflow\Actions\SlackNotificationHandler::class, // Your custom handler
 ],
 ```
+
+### Events
+
+The package dispatches events you can listen to:
+
+- `WorkflowStarted` - When a workflow instance begins
+- `StepStarted` - When a step is entered
+- `StepCompleted` - When a step is finished
+- `WorkflowCompleted` - When all steps are done
+- `WorkflowPaused` - When a workflow is paused
+- `WorkflowAbandoned` - When a workflow is cancelled
+
+Example listener:
+
+```php
+namespace App\Listeners;
+
+use Kumogire\Workflow\Events\WorkflowCompleted;
+
+class SendCompletionNotification
+{
+    public function handle(WorkflowCompleted $event)
+    {
+        $instance = $event->instance;
+        $user = $instance->user;
+        
+        // Send notification
+        $user->notify(new WorkflowCompletedNotification($instance));
+    }
+}
+```
+
+### Extending Models
+
+You can extend the package models if needed:
+
+```php
+namespace App\Models;
+
+use Kumogire\Workflow\Models\Workflow as BaseWorkflow;
+
+class Workflow extends BaseWorkflow
+{
+    // Add custom methods or relationships
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+}
+```
+
+Then update `config/workflow.php`:
+
+```php
+'models' => [
+    'workflow' => \App\Models\Workflow::class,
+],
+```
+
+## API Endpoints
+
+The package provides RESTful API endpoints (configurable via `config/workflow.php`):
+
+```
+GET    /api/workflows                    - List available workflows
+GET    /api/workflows/{workflow}          - Get workflow details
+POST   /api/workflow-instances            - Start a new workflow instance
+GET    /api/workflow-instances/{instance} - Get instance details
+POST   /api/workflow-instances/{instance}/complete-step - Complete current step
+GET    /api/workflow-instances/user/{user} - List user's workflows
+```
+
+## Requirements
+
+- PHP 8.1 or higher
+- Laravel 10.x or 11.x
 
 ## License
 
