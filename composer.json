@@ -1,0 +1,40 @@
+{
+    "name": "kumogire/laravel-workflow",
+    "description": "A flexible workflow system for Laravel applications",
+    "keywords": ["laravel", "workflow", "state-machine", "process"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Keith Anderson",
+            "email": "kumogire@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0|^11.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kumogire\\Workflow\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kumogire\\Workflow\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kumogire\\Workflow\\WorkflowServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
