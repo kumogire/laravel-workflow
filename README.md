@@ -399,6 +399,88 @@ POST   /api/workflow-instances/{instance}/complete-step - Complete current step
 GET    /api/workflow-instances/user/{user} - List user's workflows
 ```
 
+## API Usage Examples
+
+### Start a Workflow
+
+```
+POST /api/workflows/instances
+{
+    "workflow_id": 1,
+    "metadata": {
+        "department": "engineering"
+    }
+}
+```
+
+### Get Current Step
+
+```
+GET /api/workflows/instances/1
+Response:
+json{
+    "instance_id": 1,
+    "status": "in_progress",
+    "current_step": {
+        "id": 2,
+        "title": "Complete Profile",
+        "description": "Fill out your details",
+        "type": "form",
+        "configuration": {
+            "fields": ["name", "phone", "address"]
+        },
+        "can_view": true,
+        "can_complete": true
+    },
+    "workflow": {
+        "id": 1,
+        "name": "Employee Onboarding",
+        "type": "onboarding"
+    }
+}
+```
+
+### Complete Step
+
+```
+POST /api/workflows/instances/1/complete-step
+{
+    "data": {
+        "name": "John Doe",
+        "phone": "555-1234",
+        "address": "123 Main St"
+    }
+}
+```
+
+### Admin: Create Workflow
+
+```
+POST /admin/workflows/workflows
+{
+    "name": "Employee Onboarding",
+    "description": "Complete onboarding process",
+    "type": "onboarding",
+    "is_active": true
+}
+```
+
+### Admin: Create Step
+
+```
+POST /admin/workflows/steps
+{
+    "workflow_id": 1,
+    "order": 1,
+    "title": "Complete Profile",
+    "type": "form",
+    "configuration": {
+        "fields": ["name", "email", "phone"]
+    },
+    "can_complete_roles": ["employee"]
+}
+```
+
 ## Requirements
 
 - PHP 8.1 or higher
