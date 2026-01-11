@@ -63,4 +63,19 @@ return [
     */
     'cache_workflows' => true,
     'cache_ttl' => 3600, // 1 hour
+
+    /*
+    |--------------------------------------------------------------------------
+    | Route Configuration
+    |--------------------------------------------------------------------------
+    */
+    'routes' => [
+        'api_prefix' => env('WORKFLOW_API_PREFIX', 'api/workflows'),
+        'api_middleware' => ['api', 'auth:sanctum'],
+        
+        'admin_prefix' => env('WORKFLOW_ADMIN_PREFIX', 'admin/workflows'),
+        'admin_middleware' => ['web', 'auth', 'admin'],
+    ],
+
+    'enable_admin_routes' => env('WORKFLOW_ENABLE_ADMIN_ROUTES', true),
 ];
