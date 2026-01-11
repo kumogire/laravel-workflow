@@ -3,8 +3,14 @@
 namespace Kumogire\Workflow;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
 use Kumogire\Workflow\Services\WorkflowService;
+use Kumogire\Workflow\Services\WorkflowStateMachine;
+use Kumogire\Workflow\Actions\ActionHandlerFactory;
 use Kumogire\Workflow\Console\Commands\InstallWorkflowPackage;
+use Kumogire\Workflow\Events\StepStarted;
+use Kumogire\Workflow\Events\StepCompleted;
+use Kumogire\Workflow\Listeners\ExecuteWorkflowActions;
 
 class WorkflowServiceProvider extends ServiceProvider
 {
@@ -15,13 +21,18 @@ class WorkflowServiceProvider extends ServiceProvider
             __DIR__.'/../config/workflow.php', 'workflow'
         );
 
-        // Register the main service
+        // Register services
+        $this->app->singleton(WorkflowStateMachine::class);
+        $this->app->singleton(ActionHandlerFactory::class);
+        
         $this->app->singleton(WorkflowService::class, function ($app) {
-            return new WorkflowService();
+            return new WorkflowService(
+                $app->make(WorkflowStateMachine::class)
+            );
         });
 
-         // Register facade alias
-        $this->app->alias(\Kumogire\Workflow\Services\WorkflowService::class, 'workflow');
+        // Register facade alias
+        $this->app->alias(WorkflowService::class, 'workflow');
     }
 
     public function boot()
@@ -41,7 +52,7 @@ class WorkflowServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/workflow'),
         ], 'workflow-views');
 
-        // Load migrations (optional - allows running without publishing)
+        // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         // Load routes
@@ -67,9 +78,7 @@ class WorkflowServiceProvider extends ServiceProvider
 
     protected function registerEventListeners()
     {
-        $events = $this->app['events'];
-
-        // Register your event listeners here
-        // Maybe EventServiceProvider pattern
+        Event::listen(StepStarted::class, [ExecuteWorkflowActions::class, 'handleStepStarted']);
+        Event::listen(StepCompleted::class, [ExecuteWorkflowActions::class, 'handleStepCompleted']);
     }
 }

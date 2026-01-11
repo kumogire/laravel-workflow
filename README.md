@@ -306,6 +306,86 @@ Then update `config/workflow.php`:
 ],
 ```
 
+## Workflow Action Examples
+
+### Email Action
+
+```
+use Kumogire\Workflow\Models\WorkflowAction;
+
+WorkflowAction::create([
+    'workflow_step_id' => $step->id,
+    'type' => 'email',
+    'trigger' => 'on_step_complete',
+    'configuration' => [
+        'to' => '{{user.email}}',
+        'subject' => 'Welcome to {{workflow.name}}!',
+        'template' => 'emails.workflow.welcome',
+        'data' => [
+            'user_name' => '{{user.name}}',
+            'workflow_name' => '{{workflow.name}}',
+        ],
+    ],
+]);
+```
+
+### SMS Action
+
+```
+WorkflowAction::create([
+    'workflow_step_id' => $step->id,
+    'type' => 'sms',
+    'trigger' => 'on_step_start',
+    'configuration' => [
+        'to' => '{{user.phone}}',
+        'message' => 'Hi {{user.name}}, your next step is ready!',
+    ],
+]);
+```
+
+### Webhook Action
+
+```
+WorkflowAction::create([
+    'workflow_step_id' => $step->id,
+    'type' => 'webhook',
+    'trigger' => 'on_step_complete',
+    'configuration' => [
+        'url' => 'https://api.example.com/workflow-notifications',
+        'method' => 'POST',
+        'headers' => [
+            'Authorization' => 'Bearer YOUR_API_KEY',
+            'Content-Type' => 'application/json',
+        ],
+        'payload' => [
+            'user_id' => '{{user.id}}',
+            'workflow_id' => '{{workflow.id}}',
+            'step_completed' => true,
+        ],
+    ],
+]);
+```
+
+### Data Save Action
+
+```
+WorkflowAction::create([
+    'workflow_step_id' => $step->id,
+    'type' => 'data_save',
+    'trigger' => 'on_step_complete',
+    'configuration' => [
+        'model' => 'App\Models\UserProfile',
+        'find_by' => [
+            'user_id' => '{{user.id}}',
+        ],
+        'attributes' => [
+            'onboarding_completed' => true,
+            'completed_at' => now(),
+        ],
+    ],
+]);
+```
+
 ## API Endpoints
 
 The package provides RESTful API endpoints (configurable via `config/workflow.php`):
