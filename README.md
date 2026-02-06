@@ -481,6 +481,26 @@ POST /admin/workflows/steps
 }
 ```
 
+## Tests
+
+# Run all tests
+composer test
+
+# Run specific test suite
+vendor/bin/phpunit --testsuite Unit
+vendor/bin/phpunit --testsuite Feature
+
+# Run with coverage
+composer test-coverage# Run all tests
+composer test
+
+# Run specific test suite
+vendor/bin/phpunit --testsuite Unit
+vendor/bin/phpunit --testsuite Feature
+
+# Run with coverage
+composer test-coverage
+
 ## Requirements
 
 - PHP 8.1 or higher
