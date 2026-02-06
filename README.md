@@ -1,5 +1,10 @@
 # Laravel Workflow
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/kumogire/laravel-workflow.svg?style=flat-square)](https://packagist.org/packages/kumogire/laravel-workflow)
+[![Total Downloads](https://img.shields.io/packagist/dt/kumogire/laravel-workflow.svg?style=flat-square)](https://packagist.org/packages/kumogire/laravel-workflow)
+[![License](https://img.shields.io/packagist/l/kumogire/laravel-workflow.svg?style=flat-square)](https://packagist.org/packages/kumogire/laravel-workflow)
+
+
 A flexible, database-driven workflow system for Laravel applications.
 
 ## Installation
