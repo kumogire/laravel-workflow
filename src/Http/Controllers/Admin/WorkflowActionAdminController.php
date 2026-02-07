@@ -7,6 +7,12 @@ use Illuminate\Routing\Controller;
 use Kumogire\Workflow\Models\WorkflowAction;
 use Kumogire\Workflow\Http\Requests\Admin\CreateWorkflowActionRequest;
 
+/**
+ * API/JSON controller for managing workflow actions in the admin panel. 
+ * Provides endpoints for listing, creating, viewing, updating, and deleting workflow actions.
+ * All endpoints are protected by admin authentication middleware. 
+ * The controller uses request validation to ensure data integrity and returns standardized JSON responses using API resources.
+ */
 class WorkflowActionAdminController extends Controller
 {
     /**

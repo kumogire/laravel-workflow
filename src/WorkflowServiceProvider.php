@@ -47,7 +47,7 @@ class WorkflowServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'workflow-migrations');
 
-        // Publish views (if you include admin UI)
+        // Publish views
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/workflow'),
         ], 'workflow-views');
@@ -62,8 +62,22 @@ class WorkflowServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
         }
 
+        if (config('workflow.routes.enable_admin_web', true)) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        }
+
         // Load views
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'workflow');
+
+        // Register Blade components
+        $this->loadViewComponentsAs('workflow', [
+            \Kumogire\Workflow\View\Components\WorkflowList::class,
+            \Kumogire\Workflow\View\Components\WorkflowForm::class,
+            \Kumogire\Workflow\View\Components\WorkflowSteps::class,
+            \Kumogire\Workflow\View\Components\RecentWorkflows::class,
+            \Kumogire\Workflow\View\Components\WorkflowStats::class,
+            \Kumogire\Workflow\View\Components\UserWorkflows::class,
+        ]);
 
         // Register commands
         if ($this->app->runningInConsole()) {

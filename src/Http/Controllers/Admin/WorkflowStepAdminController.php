@@ -9,6 +9,12 @@ use Kumogire\Workflow\Http\Resources\WorkflowStepResource;
 use Kumogire\Workflow\Http\Requests\Admin\CreateWorkflowStepRequest;
 use Kumogire\Workflow\Http\Requests\Admin\UpdateWorkflowStepRequest;
 
+/**
+ * API/JSON controller for managing workflow steps in the admin panel. 
+ * Provides endpoints for listing, creating, viewing, updating, deleting, and reordering workflow steps.
+ * All endpoints are protected by admin authentication middleware. 
+ * The controller uses request validation to ensure data integrity and returns standardized JSON responses using API resources.
+ */
 class WorkflowStepAdminController extends Controller
 {
     /**

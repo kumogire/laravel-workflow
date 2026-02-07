@@ -9,6 +9,12 @@ use Kumogire\Workflow\Http\Resources\WorkflowResource;
 use Kumogire\Workflow\Http\Requests\Admin\CreateWorkflowRequest;
 use Kumogire\Workflow\Http\Requests\Admin\UpdateWorkflowRequest;
 
+/**
+ * API/JSON controller for managing workflows in the admin panel. 
+ * Provides endpoints for listing, creating, viewing, updating, and deleting workflows.
+ * All endpoints are protected by admin authentication middleware. 
+ * The controller uses request validation to ensure data integrity and returns standardized JSON responses using API resources.
+ */
 class WorkflowAdminController extends Controller
 {
     /**

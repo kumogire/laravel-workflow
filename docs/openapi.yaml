@@ -1,0 +1,764 @@
+openapi: 3.0.0
+info:
+  title: Laravel Workflow API
+  description: API for managing workflows and workflow instances
+  version: 1.0.0
+  contact:
+    name: Kumogire
+    email: kumogire@gmail.com
+
+servers:
+  - url: https://your-app.com/api/workflows
+    description: Production server
+  - url: http://localhost/api/workflows
+    description: Local development server
+
+tags:
+  - name: Workflows
+    description: Workflow management endpoints
+  - name: Workflow Instances
+    description: Workflow instance operations
+  - name: Admin - Workflows
+    description: Admin endpoints for workflow CRUD
+  - name: Admin - Steps
+    description: Admin endpoints for step management
+  - name: Admin - Actions
+    description: Admin endpoints for action management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Employee Onboarding"
+        description:
+          type: string
+          example: "Complete onboarding process for new employees"
+        type:
+          type: string
+          example: "onboarding"
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+
+    WorkflowStep:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        workflow_id:
+          type: integer
+          example: 1
+        order:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Complete Profile"
+        description:
+          type: string
+          example: "Fill out your employee profile"
+        type:
+          type: string
+          example: "form"
+        configuration:
+          type: object
+        condition_type:
+          type: string
+          enum: [always, if_data_equals, if_data_contains, if_role]
+          example: "always"
+        condition_config:
+          type: object
+        skip_if_condition_false:
+          type: boolean
+          example: false
+        can_view_roles:
+          type: array
+          items:
+            type: string
+        can_complete_roles:
+          type: array
+          items:
+            type: string
+
+    WorkflowInstance:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        workflow_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        current_step_id:
+          type: integer
+          example: 2
+        status:
+          type: string
+          enum: [pending, in_progress, paused, completed, abandoned]
+          example: "in_progress"
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          type: object
+        workflow:
+          $ref: '#/components/schemas/Workflow'
+        current_step:
+          $ref: '#/components/schemas/WorkflowStep'
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      tags:
+        - Workflows
+      summary: List all workflows
+      description: Get a paginated list of workflows with optional filtering
+      parameters:
+        - name: type
+          in: query
+          description: Filter by workflow type
+          schema:
+            type: string
+          example: "onboarding"
+        - name: include_inactive
+          in: query
+          description: Include inactive workflows
+          schema:
+            type: string
+            enum: ['true', 'false']
+          example: "false"
+        - name: include_steps
+          in: query
+          description: Include workflow steps in response
+          schema:
+            type: string
+            enum: ['true', 'false']
+          example: "true"
+        - name: per_page
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  links:
+                    type: object
+                  meta:
+                    type: object
+
+  /{workflow}:
+    get:
+      tags:
+        - Workflows
+      summary: Get workflow details
+      description: Retrieve a specific workflow with its steps
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          description: Workflow ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Workflow'
+        '404':
+          description: Workflow not found
+
+  /{workflow}/availability:
+    get:
+      tags:
+        - Workflows
+      summary: Check workflow availability
+      description: Check if a user can start a workflow (considering dependencies)
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          description: Workflow ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                    example: true
+                  missing_dependencies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+
+  /instances:
+    post:
+      tags:
+        - Workflow Instances
+      summary: Start a workflow instance
+      description: Create a new workflow instance for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - workflow_id
+              properties:
+                workflow_id:
+                  type: integer
+                  example: 1
+                metadata:
+                  type: object
+                  example:
+                    department: "engineering"
+      responses:
+        '200':
+          description: Workflow instance created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowInstance'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /instances/user:
+    get:
+      tags:
+        - Workflow Instances
+      summary: Get user's workflow instances
+      description: List all workflow instances for the authenticated user
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [pending, in_progress, paused, completed, abandoned]
+        - name: workflow_type
+          in: query
+          description: Filter by workflow type
+          schema:
+            type: string
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowInstance'
+
+  /instances/{instance}:
+    get:
+      tags:
+        - Workflow Instances
+      summary: Get workflow instance details
+      description: Get current step details and status for a workflow instance
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          description: Workflow instance ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instance_id:
+                    type: integer
+                  status:
+                    type: string
+                  current_step:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      type:
+                        type: string
+                      configuration:
+                        type: object
+                      can_view:
+                        type: boolean
+                      can_complete:
+                        type: boolean
+                  workflow:
+                    type: object
+        '403':
+          description: Unauthorized access
+        '404':
+          description: Instance not found
+
+  /instances/{instance}/complete-step:
+    post:
+      tags:
+        - Workflow Instances
+      summary: Complete current step
+      description: Complete the current step and advance to the next
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          description: Workflow instance ID
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  example:
+                    answer: "yes"
+                    score: 85
+      responses:
+        '200':
+          description: Step completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowInstance'
+        '403':
+          description: Permission denied
+        '422':
+          description: Workflow error
+
+  /instances/{instance}/pause:
+    post:
+      tags:
+        - Workflow Instances
+      summary: Pause workflow instance
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow paused
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowInstance'
+
+  /instances/{instance}/resume:
+    post:
+      tags:
+        - Workflow Instances
+      summary: Resume paused workflow instance
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow resumed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowInstance'
+
+  /instances/{instance}/abandon:
+    post:
+      tags:
+        - Workflow Instances
+      summary: Abandon workflow instance
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow abandoned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkflowInstance'
+
+  # Admin Endpoints
+  /admin/workflows:
+    get:
+      tags:
+        - Admin - Workflows
+      summary: List all workflows (Admin)
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+
+    post:
+      tags:
+        - Admin - Workflows
+      summary: Create workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - type
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                type:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Workflow created
+
+  /admin/workflows/{workflow}:
+    get:
+      tags:
+        - Admin - Workflows
+      summary: Get workflow (Admin)
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+
+    put:
+      tags:
+        - Admin - Workflows
+      summary: Update workflow
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                type:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Workflow updated
+
+    delete:
+      tags:
+        - Admin - Workflows
+      summary: Delete workflow
+      parameters:
+        - name: workflow
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Workflow deleted
+
+  /admin/steps:
+    post:
+      tags:
+        - Admin - Steps
+      summary: Create workflow step
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - workflow_id
+                - order
+                - title
+                - type
+              properties:
+                workflow_id:
+                  type: integer
+                order:
+                  type: integer
+                title:
+                  type: string
+                description:
+                  type: string
+                type:
+                  type: string
+                configuration:
+                  type: object
+                condition_type:
+                  type: string
+                condition_config:
+                  type: object
+                skip_if_condition_false:
+                  type: boolean
+                can_view_roles:
+                  type: array
+                  items:
+                    type: string
+                can_complete_roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Step created
+
+  /admin/steps/{step}:
+    put:
+      tags:
+        - Admin - Steps
+      summary: Update workflow step
+      parameters:
+        - name: step
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Step updated
+
+    delete:
+      tags:
+        - Admin - Steps
+      summary: Delete workflow step
+      parameters:
+        - name: step
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Step deleted
+
+  /admin/steps/reorder:
+    post:
+      tags:
+        - Admin - Steps
+      summary: Reorder workflow steps
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - steps
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      order:
+                        type: integer
+      responses:
+        '200':
+          description: Steps reordered
+
+  /admin/actions:
+    post:
+      tags:
+        - Admin - Actions
+      summary: Create workflow action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - workflow_step_id
+                - type
+                - trigger
+                - configuration
+              properties:
+                workflow_step_id:
+                  type: integer
+                type:
+                  type: string
+                  enum: [email, sms, webhook, data_save]
+                trigger:
+                  type: string
+                  enum: [on_step_start, on_step_complete]
+                configuration:
+                  type: object
+      responses:
+        '201':
+          description: Action created
+
+  /admin/actions/{action}:
+    put:
+      tags:
+        - Admin - Actions
+      summary: Update workflow action
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Action updated
+
+    delete:
+      tags:
+        - Admin - Actions
+      summary: Delete workflow action
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Action deleted

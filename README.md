@@ -486,6 +486,104 @@ POST /admin/workflows/steps
 }
 ```
 
+## API Documentation
+
+Full API documentation is available in multiple formats:
+
+- [Markdown Documentation](docs/API.md)
+- [OpenAPI Specification](docs/openapi.yaml) - Import into Swagger UI
+- [Postman Collection](docs/postman_collection.json) - Import into Postman
+
+### Quick Start with Postman
+
+1. Download the [Postman collection](docs/postman_collection.json)
+2. Import into Postman
+3. Set your `base_url` and `bearer_token` variables
+4. Start making requests!
+
+
+## Admin View Componets
+
+### Example: Dashboard with widgets
+
+```
+{{-- In project's resources/views/admin/dashboard.blade.php --}}
+@extends('layouts.admin')
+
+@section('content')
+    <div class="space-y-6">
+        {{-- Statistics --}}
+        <x-workflow::workflow-stats />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Recent workflows --}}
+            <x-workflow::recent-workflows :limit="5" />
+
+            {{-- User's active workflows --}}
+            <x-workflow::user-workflows status="in_progress" :limit="5" />
+        </div>
+    </div>
+@endsection
+```
+
+### Example: Workflow management page
+
+```
+{{-- In parent project's resources/views/admin/workflows.blade.php --}}
+@extends('layouts.admin')
+
+@section('content')
+    {{-- List all workflows --}}
+    <x-workflow::workflow-list />
+
+    {{-- Or filter by type --}}
+    <x-workflow::workflow-list type="onboarding" />
+
+    {{-- Show inactive workflows too --}}
+    <x-workflow::workflow-list :show-inactive="true" />
+@endsection
+```
+
+### Example: Create workflow form
+
+```
+{{-- In parent project's resources/views/admin/create-workflow.blade.php --}}
+@extends('layouts.admin')
+
+@section('content')
+    <div class="max-w-2xl">
+        <h1 class="text-2xl font-bold mb-6">Create Workflow</h1>
+        
+        <x-workflow::workflow-form>
+            {{-- Custom cancel button in the slot --}}
+            <a href="/admin/workflows" class="text-sm text-gray-600 hover:text-gray-900">
+                Cancel
+            </a>
+        </x-workflow::workflow-form>
+    </div>
+@endsection
+```
+
+### Example: View workflow with steps
+
+```
+{{-- In parent project's resources/views/admin/view-workflow.blade.php --}}
+@extends('layouts.admin')
+
+@section('content')
+    <div class="space-y-6">
+        {{-- Workflow details --}}
+        <div class="bg-white shadow rounded-lg p-6">
+            <h1 class="text-2xl font-bold">{{ $workflow->name }}</h1>
+            <p class="text-gray-600">{{ $workflow->description }}</p>
+        </div>
+
+        {{-- Steps with actions --}}
+        <x-workflow::workflow-steps :workflow="$workflow" :show-actions="true" />
+    </div>
+@endsection
+```
+
 ## Tests
 
 # Run all tests

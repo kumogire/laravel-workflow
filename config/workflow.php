@@ -70,11 +70,18 @@ return [
     |--------------------------------------------------------------------------
     */
     'routes' => [
+        // API routes
         'api_prefix' => env('WORKFLOW_API_PREFIX', 'api/workflows'),
         'api_middleware' => ['api', 'auth:sanctum'],
         
+        // Admin API routes
         'admin_prefix' => env('WORKFLOW_ADMIN_PREFIX', 'admin/workflows'),
         'admin_middleware' => ['web', 'auth', 'admin'],
+
+        // Admin web interface routes
+        'admin_web_prefix' => env('WORKFLOW_ADMIN_WEB_PREFIX', 'workflow-admin'),
+        'admin_web_middleware' => ['web', 'auth'],
+        'enable_admin_web' => env('WORKFLOW_ENABLE_ADMIN_WEB', true),
     ],
 
     'enable_admin_routes' => env('WORKFLOW_ENABLE_ADMIN_ROUTES', true),
