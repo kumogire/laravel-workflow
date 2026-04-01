@@ -265,7 +265,7 @@ class WorkflowService
             $prerequisiteWorkflow = $dependency->dependsOnWorkflow;
             
             // Check if user has completed the prerequisite workflow
-            $completed = WorkflowInstance::where('workflow_id', $prerequisite Workflow->id)
+            $completed = WorkflowInstance::where('workflow_id', $prerequisiteWorkflow->id)
                 ->where('user_id', $user->id)
                 ->where('status', 'completed')
                 ->exists();
