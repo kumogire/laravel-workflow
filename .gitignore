@@ -1,0 +1,50 @@
+# Dependencies
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and cache
+storage/logs/*
+storage/framework/cache/*
+bootstrap/cache/*
+
+# PHPUnit coverage
+coverage/# Dependencies
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and cache
+storage/logs/*
+storage/framework/cache/*
+bootstrap/cache/*
+
+# PHPUnit coverage
+coverage/
+
+# PHPUnit cache
+.phpunit.result.cache
+.phpunit.cache
+phpunit.cache
