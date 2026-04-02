@@ -502,7 +502,7 @@ Full API documentation is available in multiple formats:
 4. Start making requests!
 
 
-## Admin View Componets
+## Admin View Components
 
 ### Example: Dashboard with widgets
 
