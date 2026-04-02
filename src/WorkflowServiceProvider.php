@@ -4,6 +4,7 @@ namespace Kumogire\Workflow;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Kumogire\Workflow\Http\Middleware\AdminMiddleware;
 use Kumogire\Workflow\Services\WorkflowService;
 use Kumogire\Workflow\Services\WorkflowStateMachine;
 use Kumogire\Workflow\Actions\ActionHandlerFactory;
@@ -54,6 +55,9 @@ class WorkflowServiceProvider extends ServiceProvider
 
         // Load migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // Register middleware alias
+        $this->app['router']->aliasMiddleware('admin', AdminMiddleware::class);
 
         // Load routes
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

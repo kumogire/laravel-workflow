@@ -22,7 +22,7 @@ class AdminApiTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJsonFragment(['name' => 'New Workflow']);
 
         $this->assertDatabaseHas('workflows', [
@@ -80,8 +80,8 @@ class AdminApiTest extends TestCase
             'can_complete_roles' => ['employee'],
         ]);
 
-        $response->assertStatus(200);
-        
+        $response->assertStatus(201);
+
         $this->assertDatabaseHas('workflow_steps', [
             'workflow_id' => $workflow->id,
             'title' => 'First Step',

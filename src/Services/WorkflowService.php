@@ -99,6 +99,11 @@ class WorkflowService
             $instanceStep->data = $data;
             $instanceStep->save();
 
+            // Transition through in_progress if step hasn't been started yet
+            if ($instanceStep->status === 'not_started') {
+                $this->stateMachine->transitionStep($instanceStep, 'in_progress');
+            }
+
             // Mark step as completed
             $this->stateMachine->transitionStep($instanceStep, 'completed', $user);
 

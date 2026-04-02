@@ -21,6 +21,9 @@ class CompleteStepRequest extends FormRequest
     {
         return [
             'data' => 'sometimes|array',
+            'step_id' => 'sometimes|exists:workflow_steps,id',
+            'comment' => 'nullable|string',
+            'payload' => 'sometimes|array',
         ];
     }
 }

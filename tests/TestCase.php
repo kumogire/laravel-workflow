@@ -5,6 +5,7 @@ namespace Kumogire\Workflow\Tests;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Kumogire\Workflow\WorkflowServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Kumogire\Workflow\Tests\Models\User;
 
 abstract class TestCase extends Orchestra
 {
@@ -25,6 +26,7 @@ abstract class TestCase extends Orchestra
     {
         return [
             WorkflowServiceProvider::class,
+            \Laravel\Sanctum\SanctumServiceProvider::class,
         ];
     }
 
@@ -36,9 +38,17 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix'   => '',
         ]);
-
-        // Point to test User model
-        $app['config']->set('workflow.user_model', \Kumogire\Workflow\Tests\User::class);
+        // Add Sanctum configuration
+        $app['config']->set('auth.guards.sanctum', [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ]);
+        $app['config']->set('auth.providers.users', [
+            'driver' => 'eloquent',
+            'model' => \Kumogire\Workflow\Tests\Models\User::class,
+        ]);
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('x', 32)));
+        $app['config']->set('workflow.routes.admin_middleware', ['api', 'auth:sanctum', 'admin']);
         $app['config']->set('workflow.queue_actions', false);
     }
 
